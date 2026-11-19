@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Merci — Aetherion Gym</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--night:#050b18;--deep:#081428;--line:rgba(159,216,255,.14);--ice:#9fd8ff;--ice-2:#d6efff;--text:#e8f3fc;--muted:#8ea6bf}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Manrope,system-ui,sans-serif;background:var(--night);color:var(--text);min-height:100vh;display:grid;place-items:center;padding:24px;-webkit-font-smoothing:antialiased;background-image:radial-gradient(ellipse 70% 50% at 80% 0%,rgba(29,95,168,.4),transparent 70%)}
+.card{max-width:520px;width:100%;border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,rgba(15,36,71,.6),rgba(6,15,32,.7));padding:44px 34px;text-align:center}
+.logo{display:inline-flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.08em;font-size:14px;margin-bottom:34px}
+.mark{width:30px;height:30px;border:1px solid var(--ice);border-radius:50%;display:grid;place-items:center;font-family:"Instrument Serif";font-size:18px;color:var(--ice)}
+h1{font-size:34px;font-weight:600;letter-spacing:-.02em;line-height:1.1;margin-bottom:14px}
+.serif{font-family:"Instrument Serif",serif;font-style:italic;font-weight:400;color:var(--ice)}
+p{color:var(--muted);line-height:1.6}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:15px 28px;border-radius:999px;font-weight:700;font-size:15px;background:linear-gradient(135deg,var(--ice-2),var(--ice));color:#04101f;text-decoration:none;margin:8px 0;box-shadow:0 10px 40px -10px rgba(159,216,255,.6)}
+.btns{margin:28px 0 20px}
+.spin{width:40px;height:40px;border:1px solid var(--ice);border-radius:50%;margin:20px auto;position:relative;animation:s 1.6s linear infinite}
+.spin::after{content:"";position:absolute;top:-4px;left:50%;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:var(--ice);box-shadow:0 0 12px var(--ice)}
+@keyframes s{to{transform:rotate(360deg)}}
+a.back{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="card">
+  <a class="logo" href="/"><span class="mark">A</span>AETHERION GYM</a>
+  <div id="state">
+    <div class="spin"></div>
+    <p>Vérification de ton paiement…</p>
+  </div>
+</div>
+<script>
+const API = "https://aetherion-gym-api.enzofoulonpro.workers.dev";
+const box = document.getElementById("state");
+const id = new URLSearchParams(location.search).get("session_id");
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+async function check(tries){
+  try{
+    const r = await fetch(`${API}/session?session_id=${encodeURIComponent(id)}`);
+    const d = await r.json();
+    if(d.paid){
+      box.innerHTML = `<h1>Merci, <span class="serif">c'est validé.</span></h1>
+        <p>Ton paiement est confirmé. Télécharge ton programme ci-dessous. Tu vas aussi le recevoir par e-mail${d.email?` à <b style="color:var(--text)">${esc(d.email)}</b>`:""}.</p>
+        <div class="btns">${d.items.map(it=>`<a class="btn" href="${API}/download?session_id=${encodeURIComponent(id)}&i=${it.index}">Télécharger ${esc(it.name)} ↓</a>`).join("<br>")}</div>
+        <a class="back" href="/">← Retour au site</a>`;
+      return;
+    }
+    if(tries>0) return setTimeout(()=>check(tries-1),2500);
+    box.innerHTML = `<h1>Paiement <span class="serif">en attente.</span></h1><p>Nous n'avons pas encore la confirmation de ton paiement. Si tu viens de payer, actualise cette page dans quelques instants. Tu recevras aussi ton programme par e-mail.</p><div class="btns"><a class="btn" href="">Actualiser</a></div>`;
+  }catch(e){
+    box.innerHTML = `<h1>Oups.</h1><p>Impossible de vérifier ton paiement pour le moment. Ton programme t'est aussi envoyé par e-mail.</p>`;
+  }
+}
+if(id) check(4); else box.innerHTML = `<h1>Aucune commande.</h1><p>Cette page s'affiche après un achat.</p><div class="btns"><a class="btn" href="/#programmes">Voir les programmes</a></div>`;
+</script>
+</body>
+</html>
